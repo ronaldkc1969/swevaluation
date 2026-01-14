@@ -260,6 +260,232 @@
         init();
     </script>
 </body>
+</html>                    <input type="text" id="studentId" class="form-control" required>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label>パスワード</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn--primary" id="loginBtn">ログイン</button>
+                <p id="loginError" style="color:red; text-align:center; margin-top:15px;"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <header style="display:flex; justify-content: space-between; background:white; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <div><strong>学籍番号:</strong> <span id="displayId"></span><br><strong>氏名:</strong> <span id="currentUserName"></span></div>
+                <button onclick="location.reload()" class="btn" style="background:#dc3545; color:white; padding:8px 15px;">ログアウト</button>
+            </header>
+
+            <form id="evaluationForm">
+                <section class="card">
+                    <h2>施設・機関情報</h2>
+                    <div class="grid-2">
+                        <div style="margin-bottom:10px;"><label>種別</label><input type="text" id="info_type" class="form-control"></div>
+                        <div style="margin-bottom:10px;"><label>設置主体名</label><input type="text" id="info_owner" class="form-control"></div>
+                    </div>
+                    <div style="margin-bottom:10px;"><label>施設・機関名</label><input type="text" id="info_facility" class="form-control"></div>
+                    <div style="margin-bottom:10px;"><label>所在地</label><input type="text" id="info_address" class="form-control"></div>
+                    <div class="grid-2">
+                        <div style="margin-bottom:10px;"><label>代表者</label><input type="text" id="info_rep" class="form-control"></div>
+                        <div style="margin-bottom:10px;"><label>実習指導者</label><input type="text" id="info_mentor" class="form-control"></div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>実習期間・出席状況</h2>
+                    <div class="grid-2">
+                        <div style="margin-bottom:10px;"><label>開始日</label><input type="date" id="date_start" class="form-control"></div>
+                        <div style="margin-bottom:10px;"><label>終了日</label><input type="date" id="date_end" class="form-control"></div>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label>通い・宿泊の別：</label>
+                        <input type="radio" name="stay_type" value="通い" id="stay_1"> <label for="stay_1">通い</label>
+                        <input type="radio" name="stay_type" value="宿泊" id="stay_2" style="margin-left:15px;"> <label for="stay_2">宿泊</label>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:10px;">
+                        <div><label style="font-size:12px;">出席すべき日数</label><input type="number" id="att_must" class="form-control"></div>
+                        <div><label style="font-size:12px;">出席日数</label><input type="number" id="att_done" class="form-control"></div>
+                        <div><label style="font-size:12px;">欠席</label><input type="number" id="att_absent" class="form-control"></div>
+                        <div><label style="font-size:12px;">遅刻</label><input type="number" id="att_late" class="form-control"></div>
+                        <div><label style="font-size:12px;">早退</label><input type="number" id="att_early" class="form-control"></div>
+                    </div>
+                </section>
+
+                <div id="dynamicSections"></div>
+
+                <section class="card">
+                    <h2>Ｅ 総合評価</h2>
+                    <div class="radio-group" id="group-E" style="justify-content: space-around; padding: 10px;"></div>
+                </section>
+
+                <section class="card">
+                    <h2>Ｆ 総評 / Ｇ アドバイス</h2>
+                    <label>Ｆ 実習生に関する総評</label>
+                    <textarea id="comment-F" class="form-control" rows="6" style="margin-bottom:20px;"></textarea>
+                    <label>Ｇ 今後の学習に対するアドバイス</label>
+                    <textarea id="comment-G" class="form-control" rows="6"></textarea>
+                </section>
+
+                <button type="submit" class="btn btn--save" id="saveBtn">この内容でスプレッドシートを更新</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz9ACnaVJA0-WJSsSXUkfDCcre09URSMx0NkTp2p7HqlTqTy2w2ZCS_kT6nGaulh_3w2w/exec";
+        
+        const evalConfig = {
+            'A': ['利用者及び生活課題・ニーズの理解', '職種の業務内容に関する理解', '施設・機関の機構・機能の理解', '関連施設・制度・社会資源の理解'],
+            'B': ['利用者への共感的・理解的な態度', '基本的技術（面接・記録等）の習得', '実習日誌・記録の作成能力'],
+            'C': ['規則の遵守・マナー', '習得への意欲・積極性', '利用者への関わり', '人権・人格の尊重', '指導を求める態度', '他職種との協働'],
+            'D': ['各自の実習目標達成度', '援助関係の深化', '実践現場の理解深化', '実践技術の向上', '自己理解の深化']
+        };
+
+        function init() {
+            let html = '';
+            for (let key in evalConfig) {
+                html += `<section class="card"><h2>${key}項目</h2>`;
+                evalConfig[key].forEach((text, i) => {
+                    html += `<div class="eval-row">
+                        <div style="font-size:14px; flex:1;">${text}</div>
+                        <div class="radio-group">${makeRadios(key+(i+1))}</div>
+                    </div>`;
+                });
+                html += `<p style="margin-top:15px; font-weight:bold;">【${key} 所見】</p><textarea id="view-${key}" class="form-control"></textarea></section>`;
+            }
+            document.getElementById('dynamicSections').innerHTML = html;
+            document.getElementById('group-E').innerHTML = makeRadios('E');
+        }
+
+        function makeRadios(name) {
+            return [5, 4, 3, 2, 1, '非該当'].map(v => `
+                <label style="font-size:12px; text-align:center;"><input type="radio" name="${name}" value="${v}" required><br>${v}</label>
+            `).join('');
+        }
+
+        // ログイン処理
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('loginError');
+            btn.disabled = true; btn.innerText = "認証中...";
+            err.innerText = "";
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "login",
+                        studentId: document.getElementById('studentId').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('displayId').innerText = result.id;
+                    document.getElementById('currentUserName').innerText = result.userName;
+                    
+                    // 以前のデータがあれば流し込む
+                    if (result.savedData) fillForm(result.savedData);
+                    
+                    document.getElementById('loginScreen').classList.remove('active');
+                    document.getElementById('mainApp').classList.add('active');
+                } else {
+                    err.innerText = "学籍番号またはパスワードが正しくありません";
+                }
+            } catch(e) { err.innerText = "通信エラーが発生しました"; }
+            btn.disabled = false; btn.innerText = "ログイン";
+        });
+
+        function fillForm(d) {
+            const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ""; };
+            setVal('info_type', d[3]);
+            setVal('info_owner', d[4]);
+            setVal('info_facility', d[5]);
+            setVal('info_address', d[6]);
+            setVal('info_rep', d[7]);
+            setVal('info_mentor', d[8]);
+            setVal('date_start', d[9]);
+            setVal('date_end', d[10]);
+            if(d[11]) {
+                const r = document.querySelector(`input[name="stay_type"][value="${d[11]}"]`);
+                if(r) r.checked = true;
+            }
+            setVal('att_must', d[12]);
+            setVal('att_done', d[13]);
+            setVal('att_absent', d[14]);
+            setVal('att_late', d[15]);
+            setVal('att_early', d[16]);
+            setVal('att_memo', d[17]);
+
+            let col = 18;
+            for (let key in evalConfig) {
+                evalConfig[key].forEach((_, i) => {
+                    const val = d[col++];
+                    const r = document.querySelector(`input[name="${key}${i+1}"][value="${val}"]`);
+                    if(r) r.checked = true;
+                });
+                setVal(`view-${key}`, d[col++]);
+            }
+            const valE = d[col++];
+            const rE = document.querySelector(`input[name="E"][value="${valE}"]`);
+            if(rE) rE.checked = true;
+            setVal('comment-F', d[col++]);
+            setVal('comment-G', d[col++]);
+        }
+
+        // 保存（更新）処理
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.innerText = "スプレッドシートを更新中...";
+
+            const formData = [
+                document.getElementById('displayId').innerText,
+                document.getElementById('currentUserName').innerText,
+                "ソーシャルワーク実習",
+                document.getElementById('info_type').value,
+                document.getElementById('info_owner').value,
+                document.getElementById('info_facility').value,
+                document.getElementById('info_address').value,
+                document.getElementById('info_rep').value,
+                document.getElementById('info_mentor').value,
+                document.getElementById('date_start').value,
+                document.getElementById('date_end').value,
+                (document.querySelector('input[name="stay_type"]:checked') || {}).value || "",
+                document.getElementById('att_must').value,
+                document.getElementById('att_done').value,
+                document.getElementById('att_absent').value,
+                document.getElementById('att_late').value,
+                document.getElementById('att_early').value,
+                document.getElementById('att_memo').value
+            ];
+
+            for (let key in evalConfig) {
+                evalConfig[key].forEach((_, i) => {
+                    const sel = document.querySelector(`input[name="${key}${i+1}"]:checked`);
+                    formData.push(sel ? sel.value : "");
+                });
+                formData.push(document.getElementById(`view-${key}`).value);
+            }
+            formData.push((document.querySelector('input[name="E"]:checked') || {}).value || "");
+            formData.push(document.getElementById('comment-F').value);
+            formData.push(document.getElementById('comment-G').value);
+
+            try {
+                await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "save", formData }) });
+                alert("データを正常に更新しました！");
+            } catch(e) { alert("更新に失敗しました。再度お試しください。"); }
+            btn.disabled = false; btn.innerText = "この内容でスプレッドシートを更新";
+        });
+
+        init();
+    </script>
+</body>
 </html>            </div>
         </div>
 
