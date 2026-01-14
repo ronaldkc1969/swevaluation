@@ -1,40 +1,250 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <style>
-    body { background-color: #f5f5f5; padding: 20px; }
-    .container-main { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .section-title { background: #4a4a4a; color: white; padding: 10px; margin: 20px 0 10px; font-weight: bold; }
-    .eval-table th { background: #f9f9f9; }
-    @media print { .no-print { display: none; } .container-main { box-shadow: none; padding: 0; } }
-  </style>
-  <title>実習評価システム</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ソーシャルワーク実習 評価システム</title>
+    <style>
+        /* ベーススタイル（日誌システムの構造を継承） */
+        body { font-family: sans-serif; background-color: #f4f7f9; color: #333; margin: 0; }
+        .app-container { max-width: 800px; margin: auto; padding: 20px; }
+        .form-control {
+            width: 100%; padding: 12px; font-size: 16px; 
+            border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        textarea.form-control { line-height: 1.6; min-height: 100px; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .screen { display: none; }
+        .active { display: block; }
+        .btn { padding: 12px 24px; cursor: pointer; border-radius: 4px; font-size: 16px; font-weight: bold; }
+        .btn--primary { background: #007bff; color: white; border: none; }
+        .btn--success { background: #28a745; color: white; border: none; }
+        
+        /* 評価表専用スタイル */
+        .eval-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .eval-label { flex: 1; padding-right: 10px; font-size: 14px; }
+        .radio-group { display: flex; gap: 8px; }
+        .radio-group label { font-size: 13px; display: flex; flex-direction: column; align-items: center; }
+        h2 { font-size: 18px; color: #0056b3; border-left: 5px solid #0056b3; padding-left: 10px; }
+        @media print { .no-print { display: none; } .card { box-shadow: none; border: 1px solid #000; } }
+    </style>
 </head>
 <body>
-  <div id="login-screen" class="container" style="max-width: 400px; margin-top: 100px;">
-    <div class="box">
-      <h2 class="title is-4 has-text-centered">実習評価システム ログイン</h2>
-      <div class="field">
-        <label class="label">学籍番号</label>
-        <input class="input" type="text" id="user-id">
-      </div>
-      <div class="field">
-        <label class="label">パスワード</label>
-        <input class="input" type="password" id="user-pw">
-      </div>
-      <button class="button is-link is-fullwidth" id="btn-login" onclick="onLogin()">ログイン</button>
-    </div>
-  </div>
+    <div class="app-container">
+        <div id="loginScreen" class="screen active">
+            <div class="login-card card">
+                <h1>実習評価システム</h1>
+                <p>学籍番号とパスワードでログインしてください</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>学籍番号</label>
+                        <input type="text" id="studentId" class="form-control" required placeholder="1234567">
+                    </div><br>
+                    <div class="form-group">
+                        <label>パスワード</label>
+                        <input type="password" id="password" class="form-control" required>
+                    </div><br>
+                    <button type="submit" class="btn btn--primary">ログイン</button>
+                    <p id="loginError" style="color:red;"></p>
+                </form>
+            </div>
+        </div>
 
-  <div id="app-screen" class="container-main" style="display: none;">
-    <div class="level no-print">
-      <div class="level-left"><h1 class="title is-4">実習成績評価表</h1></div>
-      <div class="level-right">
-        <button class="button is-success mr-2" onclick="onSave()">保存/更新</button>
-        <button class="button is-light" onclick="window.print()">印刷</button>
+        <div id="mainApp" class="screen">
+            <header class="no-print" style="display:flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>学籍番号:</strong> <span id="displayId"></span><br>
+                    <strong>氏名:</strong> <span id="currentUserName"></span> さん
+                </div>
+                <div>
+                    <button onclick="window.print()" class="btn">印刷</button>
+                    <button id="logoutBtn" class="btn">ログアウト</button>
+                </div>
+            </header>
+            <hr class="no-print">
+
+            <form id="evaluationForm">
+                <section class="card">
+                    <h2>Ａ 基本的知識の理解・習得の状況</h2>
+                    <div id="section-A"></div>
+                    <p>【A 所見】</p>
+                    <textarea id="view-A" class="form-control" placeholder="具体的な状況を記入"></textarea>
+                </section>
+
+                <section class="card">
+                    <h2>Ｂ 基本的技術・技能の習得の状況</h2>
+                    <div id="section-B"></div>
+                    <p>【B 所見】</p>
+                    <textarea id="view-B" class="form-control"></textarea>
+                </section>
+
+                <section class="card">
+                    <h2>Ｃ 実習態度の状況</h2>
+                    <div id="section-C"></div>
+                    <p>【C 所見】</p>
+                    <textarea id="view-C" class="form-control"></textarea>
+                </section>
+
+                <section class="card">
+                    <h2>Ｄ 実習を通した変容</h2>
+                    <div id="section-D"></div>
+                    <p>【D 所見】</p>
+                    <textarea id="view-D" class="form-control"></textarea>
+                </section>
+
+                <section class="card">
+                    <h2>Ｅ 総合評価</h2>
+                    <div class="radio-group" id="group-E" style="justify-content: space-around; padding: 20px 0;"></div>
+                </section>
+
+                <section class="card">
+                    <h2>Ｆ 実習生に関する総評</h2>
+                    <textarea id="comment-F" class="form-control" rows="6"></textarea>
+                </section>
+
+                <section class="card">
+                    <h2>Ｇ 今後の学習に対するアドバイス</h2>
+                    <textarea id="comment-G" class="form-control" rows="6"></textarea>
+                </section>
+
+                <div class="form-actions no-print" style="text-align: center; margin-bottom: 50px;">
+                    <button type="submit" class="btn btn--success" style="width: 100%;">評価データをスプレッドシートへ保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ★ここにデプロイしたGASのURLを貼り付けてください
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwnBwlwhWG8f6mePyO38cdjJ8xEff2QUdJPb7tDbntjawqH-wy_RPa9ppejaSM63KrIrA/exec";
+
+        const evalConfig = {
+            'A': ['利用者及び生活課題・ニーズの理解', '職種の業務内容に関する理解', '施設・機関の機構・機能の理解', '関連施設・制度・社会資源の理解'],
+            'B': ['利用者への共感的・理解的な態度', '基本的技術（面接・記録等）の習得', '実習日誌・記録の作成能力'],
+            'C': ['規則の遵守・マナー', '習得への意欲・積極性', '利用者への関わり', '人権・人格の尊重', '指導を求める態度', '他職種との協働'],
+            'D': ['各自の実習目標達成度', '援助関係の深化', '実践現場の理解深化', '実践技術の向上', '自己理解の深化']
+        };
+
+        let currentUser = { id: "", name: "" };
+
+        // フォーム生成
+        function setupForm() {
+            for (let key in evalConfig) {
+                const container = document.getElementById(`section-${key}`);
+                evalConfig[key].forEach((text, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'eval-row';
+                    row.innerHTML = `
+                        <div class="eval-label">${text}</div>
+                        <div class="radio-group">${makeRadios(key + (i+1))}</div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+            document.getElementById('group-E').innerHTML = makeRadios('E');
+        }
+
+        function makeRadios(name) {
+            return [5, 4, 3, 2, 1, '非該当'].map(v => `
+                <label><input type="radio" name="${name}" value="${v}" required> ${v}</label>
+            `).join('');
+        }
+
+        // ログイン処理
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studentId = document.getElementById('studentId').value;
+            const password = document.getElementById('password').value;
+            const errorArea = document.getElementById('loginError');
+            errorArea.innerText = "認証中...";
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "login", studentId, password })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    currentUser.id = studentId;
+                    currentUser.name = result.userName;
+                    document.getElementById('displayId').innerText = studentId;
+                    document.getElementById('currentUserName').innerText = result.userName;
+                    
+                    if (result.savedData) fillData(result.savedData);
+                    
+                    document.getElementById('loginScreen').classList.remove('active');
+                    document.getElementById('mainApp').classList.add('active');
+                } else {
+                    errorArea.innerText = "IDまたはパスワードが違います";
+                }
+            } catch (err) {
+                errorArea.innerText = "サーバー接続エラー";
+            }
+        });
+
+        function fillData(data) {
+            // スプレッドシートの列順序に合わせて復元
+            // (学籍, 氏名, 科目, 施設, A1, A2... の順を想定)
+            let col = 4; 
+            for (let key in evalConfig) {
+                evalConfig[key].forEach((_, i) => {
+                    const val = data[col++];
+                    const rad = document.querySelector(`input[name="${key}${i+1}"][value="${val}"]`);
+                    if(rad) rad.checked = true;
+                });
+                document.getElementById(`view-${key}`).value = data[col++] || "";
+            }
+            const valE = data[col++];
+            const radE = document.querySelector(`input[name="E"][value="${valE}"]`);
+            if(radE) radE.checked = true;
+            document.getElementById('comment-F').value = data[col++] || "";
+            document.getElementById('comment-G').value = data[col++] || "";
+        }
+
+        // 保存処理
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerText = "保存中...";
+
+            const formData = [
+                currentUser.id, currentUser.name, "ソーシャルワーク実習", "実習施設名"
+            ];
+
+            for (let key in evalConfig) {
+                evalConfig[key].forEach((_, i) => {
+                    const sel = document.querySelector(`input[name="${key}${i+1}"]:checked`);
+                    formData.push(sel ? sel.value : "");
+                });
+                formData.push(document.getElementById(`view-${key}`).value);
+            }
+            const selE = document.querySelector(`input[name="E"]:checked`);
+            formData.push(selE ? selE.value : "");
+            formData.push(document.getElementById('comment-F').value);
+            formData.push(document.getElementById('comment-G').value);
+
+            try {
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "save", formData })
+                });
+                alert("評価データを更新しました！");
+            } catch (err) {
+                alert("保存に失敗しました");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "評価データをスプレッドシートへ保存";
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => location.reload());
+        setupForm();
+    </script>
+</body>
+</html>        <button class="button is-light" onclick="window.print()">印刷</button>
       </div>
     </div>
 
