@@ -172,4 +172,142 @@
   init();
 </script>
 </body>
+</html>        <button class="button is-light" onclick="window.print()">印刷する</button>
+      </div>
+    </div>
+
+    <div class="columns is-bordered mb-4" style="border: 2px solid #000; padding: 10px;">
+      <div class="column"><strong>大学：</strong>種智院大学 [cite: 2]</div>
+      <div class="column"><strong>学籍番号：</strong><span id="st-id"></span></div>
+      <div class="column"><strong>氏名：</strong><span id="st-name"></span></div>
+      <div class="column"><strong>科目名：</strong>ソーシャルワーク実習 [cite: 2]</div>
+    </div>
+
+    <p class="is-size-7 mb-4">※ 5：大変よい / 4：よい / 3：ふつう / 2：努力を要する / 1：かなり努力を要する / 非該当 [cite: 10]</p>
+
+    <div id="form-content"></div>
+
+    <div class="section-header">Ｅ 総合評価 [cite: 25]</div>
+    <div class="p-3 box mt-2" id="eval-E"></div>
+
+    <div class="section-header">Ｆ 実習生に関する総評 [cite: 27]</div>
+    <textarea class="textarea mt-2" id="comment-F" rows="4"></textarea>
+
+    <div class="section-header">Ｇ アドバイス・長所・短所 [cite: 28]</div>
+    <textarea class="textarea mt-2" id="comment-G" rows="4"></textarea>
+
+    <div class="mt-6 has-text-centered no-print">
+      <p class="help mb-3">入力を完了したら「保存」ボタンを押してください。</p>
+      <button class="button is-large is-primary" onclick="handleSave()">データをスプレッドシートへ保存</button>
+    </div>
+  </div>
+
+<script>
+  const sections = [
+    { id: 'A', title: '基本的知識の理解・習得の状況', items: [
+      '施設・機関の利用者及びその生活課題・ニーズに関する理解 [cite: 14]',
+      '実習した職種の業務内容に関する理解 [cite: 14]',
+      '施設・機関の法的根拠・目的・組織・業務体系等に対する理解 [cite: 14]',
+      '関連する他施設・制度・社会資源に関する理解 [cite: 14]'
+    ]},
+    { id: 'B', title: '基本的技術・技能の習得の状況', items: [
+      '利用者に対して共感的・理解的に接する技能 [cite: 17]',
+      '基本的技術（面接、観察、ケア、環境設備等）の習得 [cite: 17]',
+      '実習日誌や各種記録を的確に作成する能力 [cite: 17]'
+    ]},
+    { id: 'C', title: '実習態度の状況', items: [
+      '規則の遵守（適切な服装、言葉遣い等、マナーも含む） [cite: 20]',
+      '職務を習得しようとする意欲、積極性 [cite: 20]',
+      '利用者に積極的に関わろうとする態度 [cite: 20]',
+      '利用者の人権・人格を尊重しようとする態度 [cite: 20]',
+      '実習指導者の指導・助言を積極的に求めようとする態度 [cite: 20]',
+      '他職種、他職員と協働しようとする態度 [cite: 20]'
+    ]},
+    { id: 'D', title: '実習を通した変容', items: [
+      '各自の実習目標の達成度 [cite: 23]',
+      '利用者とそのニーズに対する理解や援助関係を深めた [cite: 23]',
+      '実践現場に関する理解を深めた [cite: 23]',
+      '実践技術・技能を深めた [cite: 23]',
+      '自己理解を深めた [cite: 23]'
+    ]}
+  ];
+
+  function init() {
+    let html = '';
+    sections.forEach(sec => {
+      html += `<div class="section-header">${sec.id} ${sec.title}</div>`;
+      html += `<table class="table is-fullwidth eval-table"><thead><tr><th>評価項目</th><th>評定尺度 [cite: 10]</th></tr></thead><tbody>`;
+      sec.items.forEach((item, i) => {
+        html += `<tr><td>${item}</td><td>${makeRadios(sec.id + (i+1))}</td></tr>`;
+      });
+      html += `</tbody></table><label class="label is-small">【${sec.id} 所見】</label><textarea class="textarea mb-3" id="view-${sec.id}"></textarea>`;
+    });
+    document.getElementById('form-content').innerHTML = html;
+    document.getElementById('eval-E').innerHTML = makeRadios('E');
+  }
+
+  function makeRadios(name) {
+    return [5, 4, 3, 2, 1, '非該当'].map(v => 
+      `<label class="radio-label"><input type="radio" name="${name}" value="${v}"> ${v}</label>`
+    ).join('');
+  }
+
+  function handleLogin() {
+    const id = document.getElementById('login-id').value;
+    const pw = document.getElementById('login-pw').value;
+    google.script.run.withSuccessHandler(res => {
+      if(res.success) {
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('st-id').innerText = res.user.id;
+        document.getElementById('st-name').innerText = res.user.name;
+        if(res.savedData) loadData(res.savedData);
+      } else { alert("ログイン情報が正しくありません。"); }
+    }).login(id, pw);
+  }
+
+  function loadData(data) {
+    // スプレッドシートの各列(A-G)をフォームに復元
+    // data[0]=学籍番号, data[1]=氏名... A1はdata[4]から開始
+    let idx = 4;
+    sections.forEach(sec => {
+      sec.items.forEach((_, i) => {
+        const val = data[idx++];
+        const rad = document.querySelector(`input[name="${sec.id}${i+1}"][value="${val}"]`);
+        if(rad) rad.checked = true;
+      });
+      document.getElementById('view-' + sec.id).value = data[idx++];
+    });
+    // E, F, Gの復元
+    const valE = data[idx++];
+    const radE = document.querySelector(`input[name="E"][value="${valE}"]`);
+    if(radE) radE.checked = true;
+    document.getElementById('comment-F').value = data[idx++];
+    document.getElementById('comment-G').value = data[idx++];
+  }
+
+  function handleSave() {
+    const id = document.getElementById('st-id').innerText;
+    const name = document.getElementById('st-name').innerText;
+    let payload = [id, name, "ソーシャルワーク実習", "実習施設名"];
+
+    sections.forEach(sec => {
+      sec.items.forEach((_, i) => {
+        const sel = document.querySelector(`input[name="${sec.id}${i+1}"]:checked`);
+        payload.push(sel ? sel.value : "");
+      });
+      payload.push(document.getElementById('view-' + sec.id).value);
+    });
+
+    const selE = document.querySelector(`input[name="E"]:checked`);
+    payload.push(selE ? selE.value : "");
+    payload.push(document.getElementById('comment-F').value);
+    payload.push(document.getElementById('comment-G').value);
+
+    google.script.run.withSuccessHandler(msg => alert(msg)).saveData(payload);
+  }
+
+  init();
+</script>
+</body>
 </html>
