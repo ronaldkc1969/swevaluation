@@ -1,40 +1,177 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <style>
-    body { background-color: #f9f9f9; padding: 20px; }
-    .main-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .section-header { background: #4a4a4a; color: white; padding: 10px; margin-top: 20px; font-weight: bold; }
-    .eval-table { width: 100%; margin-bottom: 1rem; }
-    @media print { .no-print { display: none; } }
+    body { background-color: #f5f5f5; padding: 20px; }
+    .container-main { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .section-title { background: #4a4a4a; color: white; padding: 10px; margin: 20px 0 10px; font-weight: bold; }
+    .eval-table th { background: #f9f9f9; }
+    @media print { .no-print { display: none; } .container-main { box-shadow: none; padding: 0; } }
   </style>
+  <title>実習評価システム</title>
 </head>
 <body>
-  <div id="login-box" class="container" style="max-width: 400px; margin-top: 50px;">
+  <div id="login-screen" class="container" style="max-width: 400px; margin-top: 100px;">
     <div class="box">
-      <h2 class="title is-4 has-text-centered">実習評価システム (GitHub版)</h2>
+      <h2 class="title is-4 has-text-centered">実習評価システム ログイン</h2>
       <div class="field">
         <label class="label">学籍番号</label>
-        <input class="input" type="text" id="login-id">
+        <input class="input" type="text" id="user-id">
       </div>
       <div class="field">
         <label class="label">パスワード</label>
-        <input class="input" type="password" id="login-pw">
+        <input class="input" type="password" id="user-pw">
       </div>
-      <button class="button is-link is-fullwidth" id="login-btn" onclick="handleLogin()">ログイン</button>
+      <button class="button is-link is-fullwidth" id="btn-login" onclick="onLogin()">ログイン</button>
     </div>
   </div>
 
-  <div id="app" class="main-container" style="display:none;">
+  <div id="app-screen" class="container-main" style="display: none;">
     <div class="level no-print">
-      <div class="level-left"><h1 class="title is-5">ソーシャルワーク実習 成績評価表</h1></div>
+      <div class="level-left"><h1 class="title is-4">実習成績評価表</h1></div>
       <div class="level-right">
-        <button class="button is-primary mr-2" onclick="handleSave()">保存</button>
+        <button class="button is-success mr-2" onclick="onSave()">保存/更新</button>
         <button class="button is-light" onclick="window.print()">印刷</button>
       </div>
     </div>
+
+    <div class="box is-light">
+      <p><strong>学籍番号:</strong> <span id="view-st-id"></span></p>
+      <p><strong>氏名:</strong> <span id="view-st-name"></span></p>
+    </div>
+
+    <div id="dynamic-form"></div>
+
+    <div class="section-title">Ｅ 総合評価</div>
+    <div id="radio-E" class="p-3"></div>
+
+    <div class="section-title">Ｆ 総評</div>
+    <textarea id="text-F" class="textarea" rows="4"></textarea>
+
+    <div class="section-title">Ｇ アドバイス</div>
+    <textarea id="text-G" class="textarea" rows="4"></textarea>
+
+    <div class="mt-6 no-print">
+      <button class="button is-primary is-large is-fullwidth" onclick="onSave()">スプレッドシートに保存</button>
+    </div>
+  </div>
+
+<script>
+  // ★ここに新しいURLを貼り付け
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbz9ACnaVJA0-WJSsSXUkfDCcre09URSMx0NkTp2p7HqlTqTy2w2ZCS_kT6nGaulh_3w2w/exec";
+
+  const config = [
+    { id: 'A', title: '基本的知識', items: ['利用者課題理解', '業務内容理解', '組織・機能理解', '社会資源理解'] },
+    { id: 'B', title: '基本的技術', items: ['共感的態度', '技術習得', '記録能力'] },
+    { id: 'C', title: '実習態度', items: ['マナー', '意欲', '関わり', '人権尊重', '指導を仰ぐ', '協働'] },
+    { id: 'D', title: '変容', items: ['目標達成', '援助関係', '現場理解', '技術向上', '自己理解'] }
+  ];
+
+  function initForm() {
+    let html = '';
+    config.forEach(sec => {
+      html += `<div class="section-title">${sec.id} ${sec.title}</div><table class="table is-fullwidth eval-table">`;
+      sec.items.forEach((item, i) => {
+        html += `<tr><td>${item}</td><td>${makeRadios(sec.id + (i+1))}</td></tr>`;
+      });
+      html += `</table><label class="label is-small">所見</label><textarea class="textarea mb-4" id="view-${sec.id}"></textarea>`;
+    });
+    document.getElementById('dynamic-form').innerHTML = html;
+    document.getElementById('radio-E').innerHTML = makeRadios('E');
+  }
+
+  function makeRadios(name) {
+    return [5,4,3,2,1,'非該当'].map(v => 
+      `<label class="radio mr-2"><input type="radio" name="${name}" value="${v}"> ${v}</label>`
+    ).join('');
+  }
+
+  async function callGAS(payload) {
+    // 外部通信(fetch)の設定
+    const response = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "text/plain;charset=utf-8" }
+    });
+    return await response.json();
+  }
+
+  async function onLogin() {
+    const id = document.getElementById('user-id').value;
+    const pass = document.getElementById('user-pw').value;
+    const btn = document.getElementById('btn-login');
+
+    if(!id || !pass) return alert("入力してください");
+    btn.classList.add('is-loading');
+
+    try {
+      const res = await callGAS({ method: 'login', id: id, pass: pass });
+      if(res.success) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        document.getElementById('view-st-id').innerText = res.user.id;
+        document.getElementById('view-st-name').innerText = res.user.name;
+        if(res.savedData) loadSavedData(res.savedData);
+      } else {
+        alert("ログインに失敗しました。学籍番号かパスワードが違います。");
+      }
+    } catch(e) {
+      alert("通信エラーが発生しました。GASのデプロイ設定(全員)を確認してください。\n" + e);
+    } finally {
+      btn.classList.remove('is-loading');
+    }
+  }
+
+  function loadSavedData(data) {
+    let idx = 4; // 学籍番号, 氏名, 科目, 施設の後から
+    config.forEach(sec => {
+      sec.items.forEach((_, i) => {
+        const val = data[idx++];
+        const rad = document.querySelector(`input[name="${sec.id}${i+1}"][value="${val}"]`);
+        if(rad) rad.checked = true;
+      });
+      document.getElementById('view-' + sec.id).value = data[idx++] || "";
+    });
+    const valE = data[idx++];
+    const radE = document.querySelector(`input[name="E"][value="${valE}"]`);
+    if(radE) radE.checked = true;
+    document.getElementById('text-F').value = data[idx++] || "";
+    document.getElementById('text-G').value = data[idx++] || "";
+  }
+
+  async function onSave() {
+    const id = document.getElementById('view-st-id').innerText;
+    const name = document.getElementById('view-st-name').innerText;
+    let formData = [id, name, "ソーシャルワーク実習", "実習施設名"];
+
+    config.forEach(sec => {
+      sec.items.forEach((_, i) => {
+        const sel = document.querySelector(`input[name="${sec.id}${i+1}"]:checked`);
+        formData.push(sel ? sel.value : "");
+      });
+      formData.push(document.getElementById('view-' + sec.id).value);
+    });
+
+    const selE = document.querySelector(`input[name="E"]:checked`);
+    formData.push(selE ? selE.value : "");
+    formData.push(document.getElementById('text-F').value);
+    formData.push(document.getElementById('text-G').value);
+
+    try {
+      const res = await callGAS({ method: 'save', formData: formData });
+      alert(res.message);
+    } catch(e) {
+      alert("保存エラー: " + e);
+    }
+  }
+
+  initForm();
+</script>
+</body>
+</html>    </div>
     <div class="notification is-light">
       学籍番号: <span id="st-id"></span> / 氏名: <span id="st-name"></span>
     </div>
@@ -50,7 +187,7 @@
 
 <script>
   // ★重要：ここにあなたのデプロイURLを貼り付けてください
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbybfwjuOUulXaS9tiMFUcrnVz4IVoUU3nzDB2QB-kvhrJyepuGM-MQzeZmO3aYWHX_wGQ/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbwnBwlwhWG8f6mePyO38cdjJ8xEff2QUdJPb7tDbntjawqH-wy_RPa9ppejaSM63KrIrA/exec";
 
   const sections = [
     { id: 'A', title: '基本的知識', items: ['利用者理解', '業務理解', '組織理解', '資源理解'] },
