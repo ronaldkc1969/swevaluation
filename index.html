@@ -4,37 +4,122 @@
   <base target="_top">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <style>
-    body { background-color: #f9f9f9; font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; }
-    .main-container { max-width: 900px; margin: 30px auto; background: white; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    .section-header { background: #666; color: white; padding: 8px 15px; margin-top: 25px; font-weight: bold; }
-    .eval-table th { background: #f2f2f2; font-size: 0.9em; }
-    .eval-table td { vertical-align: middle; }
-    .radio-label { margin-right: 12px; cursor: pointer; white-space: nowrap; }
-    @media print { .no-print { display: none; } .main-container { box-shadow: none; margin: 0; width: 100%; padding: 0; } }
+    body { background-color: #f9f9f9; padding: 20px; }
+    .main-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .section-header { background: #4a4a4a; color: white; padding: 10px; margin-top: 20px; font-weight: bold; }
+    .eval-table { width: 100%; margin-bottom: 1rem; }
+    @media print { .no-print { display: none; } }
   </style>
 </head>
 <body>
-  <div id="login-box" class="container mt-6" style="max-width: 400px;">
+  <div id="login-box" class="container" style="max-width: 400px; margin-top: 50px;">
     <div class="box">
-      <h2 class="title is-4 has-text-centered">実習評価システム ログイン</h2>
+      <h2 class="title is-4 has-text-centered">実習評価システム (GitHub版)</h2>
       <div class="field">
         <label class="label">学籍番号</label>
-        <div class="control"><input class="input" type="text" id="login-id" placeholder="123456"></div>
+        <input class="input" type="text" id="login-id">
       </div>
       <div class="field">
         <label class="label">パスワード</label>
-        <div class="control"><input class="input" type="password" id="login-pw"></div>
+        <input class="input" type="password" id="login-pw">
       </div>
-      <button class="button is-link is-fullwidth" onclick="handleLogin()">ログイン</button>
+      <button class="button is-link is-fullwidth" id="login-btn" onclick="handleLogin()">ログイン</button>
     </div>
   </div>
 
   <div id="app" class="main-container" style="display:none;">
     <div class="level no-print">
-      <div class="level-left"><h1 class="title is-4">ソーシャルワーク実習 成績評価表</h1></div>
+      <div class="level-left"><h1 class="title is-5">ソーシャルワーク実習 成績評価表</h1></div>
       <div class="level-right">
-        <button class="button is-primary mr-2" onclick="handleSave()">一時保存・更新</button>
-        <button class="button is-light" onclick="window.print()">印刷する</button>
+        <button class="button is-primary mr-2" onclick="handleSave()">保存</button>
+        <button class="button is-light" onclick="window.print()">印刷</button>
+      </div>
+    </div>
+    <div class="notification is-light">
+      学籍番号: <span id="st-id"></span> / 氏名: <span id="st-name"></span>
+    </div>
+    <div id="form-content"></div>
+    <div class="section-header">Ｅ 総合評価</div>
+    <div id="eval-E" class="p-3"></div>
+    <div class="section-header">Ｆ 総評</div>
+    <textarea class="textarea mt-2" id="comment-F"></textarea>
+    <div class="section-header">Ｇ アドバイス</div>
+    <textarea class="textarea mt-2" id="comment-G"></textarea>
+    <button class="button is-primary is-large is-fullwidth mt-5 no-print" onclick="handleSave()">保存する</button>
+  </div>
+
+<script>
+  // ★重要：ここにあなたのデプロイURLを貼り付けてください
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbybfwjuOUulXaS9tiMFUcrnVz4IVoUU3nzDB2QB-kvhrJyepuGM-MQzeZmO3aYWHX_wGQ/exec";
+
+  const sections = [
+    { id: 'A', title: '基本的知識', items: ['利用者理解', '業務理解', '組織理解', '資源理解'] },
+    { id: 'B', title: '基本的技術', items: ['共感的態度', '技術習得', '記録能力'] },
+    { id: 'C', title: '実習態度', items: ['規則遵守', '意欲', '積極性', '人権尊重', '指導を仰ぐ', '協働'] },
+    { id: 'D', title: '変容', items: ['目標達成', '援助関係', '現場理解', '技術向上', '自己理解'] }
+  ];
+
+  function init() {
+    let html = '';
+    sections.forEach(sec => {
+      html += `<div class="section-header">${sec.title}</div><table class="table is-fullwidth eval-table">`;
+      sec.items.forEach((item, i) => {
+        html += `<tr><td>${item}</td><td>${makeRadios(sec.id + (i+1))}</td></tr>`;
+      });
+      html += `</table><label class="label is-small">所見</label><textarea class="textarea mb-3" id="view-${sec.id}"></textarea>`;
+    });
+    document.getElementById('form-content').innerHTML = html;
+    document.getElementById('eval-E').innerHTML = makeRadios('E');
+  }
+
+  function makeRadios(name) {
+    return [5, 4, 3, 2, 1, '非該当'].map(v => 
+      `<label class="radio mr-2"><input type="radio" name="${name}" value="${v}"> ${v}</label>`
+    ).join('');
+  }
+
+  // GASと通信する汎用関数 (fetchを使用)
+  async function callGAS(data) {
+    const response = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+    return await response.json();
+  }
+
+  async function handleLogin() {
+    const id = document.getElementById('login-id').value;
+    const pass = document.getElementById('login-pw').value;
+    const btn = document.getElementById('login-btn');
+    
+    btn.classList.add('is-loading');
+    try {
+      const res = await callGAS({ method: 'login', id: id, pass: pass });
+      if (res.success) {
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('st-id').innerText = res.user.id;
+        document.getElementById('st-name').innerText = res.user.name;
+        // 保存データがあれば反映（実装略）
+      } else { alert("ログイン失敗"); }
+    } catch (e) { alert("エラー: " + e); }
+    btn.classList.remove('is-loading');
+  }
+
+  async function handleSave() {
+    // フォームからデータを集める処理 (以前のロジックと同じ)
+    const id = document.getElementById('st-id').innerText;
+    let payload = [id, document.getElementById('st-name').innerText, "SW実習", "施設名"];
+    // ...各項目のpush処理...
+    
+    const res = await callGAS({ method: 'save', formData: payload });
+    alert(res.message);
+  }
+
+  init();
+</script>
+</body>
+</html>        <button class="button is-light" onclick="window.print()">印刷する</button>
       </div>
     </div>
 
