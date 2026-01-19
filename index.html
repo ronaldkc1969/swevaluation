@@ -3,38 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>実習評価システム</title>
+    <title>ソーシャルワーク実習 成績評価システム</title>
     <style>
-        /* 全体の余計な余白を完全にリセット */
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #f0f2f5; overflow-x: hidden; }
-
-        /* 画面切り替え： activeでない方は物理的に消去 */
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #f8f9fa; font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; }
         .screen { display: none; width: 100%; }
         
         /* 1. ログイン画面：中央配置 */
-        #loginScreen.active { 
-            display: flex; 
-            height: 100vh; 
-            align-items: center; 
-            justify-content: center; 
-            background-color: #dee2e6; 
-        }
-        .login-card { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
-            width: 320px; 
+        #loginScreen.active { display: flex; height: 100vh; align-items: center; justify-content: center; background-color: #e9ecef; }
+        .login-card { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 340px; }
+        
+        /* 2. 評価画面：ボタンの下に余白を作らない */
+        #mainApp.active { display: block; }
+        .app-container { max-width: 850px; margin: 0 auto; padding: 25px 15px; }
+        .card { background: white; padding: 25px; margin-bottom: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* 共通パーツ */
+        .form-control { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ced4da; border-radius: 6px; margin-top: 6px; }
+        h2 { font-size: 1.15rem; color: #0056b3; border-left: 6px solid #0056b3; padding-left: 12px; margin: 0 0 20px 0; }
+        .eval-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f3f5; }
+        .radio-group { display: flex; gap: 10px; }
+        .btn { padding: 14px 28px; cursor: pointer; border-radius: 6px; font-weight: bold; border: none; font-size: 16px; transition: 0.2s; }
+        .btn--primary { background: #007bff; color: white; width: 100%; }
+        .btn--save { background: #28a745; color: white; width: 100%; font-size: 1.25rem; padding: 20px; margin: 15px 0 0 0; }
+        .btn--logout { background: #6c757d; color: white; padding: 8px 15px; font-size: 14px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        label { font-size: 14px; font-weight: bold; color: #495057; }
+        
+        /* スコアの文字サイズ調整 */
+        .score-label { font-size: 11px; text-align: center; line-height: 1.2; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="loginScreen" class="screen active">
+        <div class="login-card">
+            <h2 style="text-align:center; border:none; padding:0; color:#333; margin-bottom:25px;">実習評価システム</h2>
+            <form id="loginForm">
+                <div style="margin-bottom:15px;"><label>学籍番号</label><input type="text" id="studentId" class="form-control" required></div>
+                <div style="margin-bottom:25px;"><label>パスワード</label><input type="password" id="password" class="form-control" required></div>
+                <button type="submit" class="btn btn--primary" id="loginBtn">ログイン</button>
+                <div id="loginError" style="color: #dc3545; text-align:center; font-size:14px; margin-top:15px; min-height:1.2em;"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <header style="display:flex; justify-content: space-between; align-items: center; background:white; padding:15px 20px; border-radius:8px; margin-bottom:25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div style="font-size:15px;">学籍番号: <span id="displayId" style="margin-right:15px;"></span>氏名: <strong><span id="currentUserName"></span> 様</strong></div>
+                <button onclick="location.reload()" class="btn btn--logout">ログアウト</button>
+            </header>
+
+            <form id="evaluationForm">
+                <section class="card">
+                    <h2>実習施設・出席状況</h2>
+                    <div class="grid-2">
+                        <div><label>種別</label><input type="text" id="info_type" class="form-control"></div>
+                        <div><label>設置主体名</label><input type="text" id="info_owner" class="form-control"></div>
+                    </div>
+                    <div style="margin-top:10px;"><label>施設・機関名</label><input type="text" id="info_facility" class="form-control"></div>
+                    <div class="grid-2" style="margin-top:10px;">
+                        <div><label>代表者</label><input type="text" id="info_rep" class="form-control"></div>
+                        <div><label>実習指導者</label><input type="text" id="info_mentor" class="form-control"></div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <label>通い・宿泊の別：</label>
+                        <input type="radio" name="stay_type" value="通い" id="stay_1"> <label for="stay_1" style="font-weight:normal;">通い</label>
+                        <input type="radio" name="stay_type" value="宿泊" id="stay_2" style="margin-left:20px;"> <label for="stay_2" style="font-weight:normal;">宿泊</label>
+                    </div>
+                </section>
+
+                <div id="dynamicSections"></div>
+
+                <section class="card">
+                    <h2>Ｅ　総合評価</h2>
+                    <div class="radio-group" id="group-E" style="justify-content: space-around;"></div>
+                </section>
+
+                <section class="card" style="margin-bottom: 0;">
+                    <h2>所見・アドバイス</h2>
+                    <div style="margin-bottom:20px;">
+                        <label>Ｆ　実習生に関する総評を具体的にご記入下さい。</label>
+                        <textarea id="comment-F" class="form-control" rows="6"></textarea>
+                    </div>
+                    <div>
+                        <label>Ｇ　実習生のアドバイス（長所・短所・今後の学習事項等）</label>
+                        <textarea id="comment-G" class="form-control" rows="6"></textarea>
+                    </div>
+                </section>
+
+                <button type="submit" class="btn btn--save" id="saveBtn">データを保存・更新する</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzBuU4I8fuECSldym_-c2KDY8gVFGCwAIyjZdMqWr5nH88u9xiqgBbU71ylaA56GQyy8A/exec";
+        
+        // 添付資料の文言を完全に反映 [cite: 14, 17, 20, 23]
+        const evalConfig = {
+            'Ａ　基本的知識の理解・習得の状況': {
+                prefix: 'A',
+                items: [
+                    '① 施設・機関の利用者及びその生活課題・ニーズに関する理解',
+                    '② 実習した職種の業務内容に関する理解',
+                    '③ 実習施設・機関の機構・機能（法的根拠・目的等）に対する理解',
+                    '④ 実習施設・機関に関連する他施設・制度・社会資源に関する理解'
+                ]
+            },
+            'Ｂ　基本的技術・技能の習得の状況': {
+                prefix: 'B',
+                items: [
+                    '① 利用者に対して共感的・理解的に接する技能',
+                    '② 実習施設・機関の基本的技術（面接、観察、ケア等）の習得',
+                    '③ 実習日誌や各種記録を的確に作成する能力'
+                ]
+            },
+            'Ｃ　実習態度の状況': {
+                prefix: 'C',
+                items: [
+                    '① 規則の遵守（出退勤、注意事項、マナー、服装、言葉遣い等）',
+                    '② 実習職種の職務を習得しようとする意欲、積極性',
+                    '③ 利用者に積極的に関わろうとする態度',
+                    '④ 利用者の人権・人格を尊重しようとする態度',
+                    '⑤ 実習指導者の指導・助言を積極的に求めようとする態度',
+                    '⑥ 実習現場における他職種、他職員と協働しようとする態度'
+                ]
+            },
+            'Ｄ　実習を通した変容': {
+                prefix: 'D',
+                items: [
+                    '① 各自の実習目標（実習計画書、本日の学習目標）の達成度',
+                    '② 利用者とそのニーズに対する理解や援助関係を深めた',
+                    '③ 実践現場に関する理解を深めた',
+                    '④ 実践技術・技能を深めた',
+                    '⑤ 自己理解を深めた'
+                ]
+            }
+        };
+
+        function makeRadios(name) {
+            return [5, 4, 3, 2, 1, '非該当'].map(v => `
+                <label class="score-label">
+                    <input type="radio" name="${name}" value="${v}">
+                    <br>${v}
+                </label>
+            `).join('');
         }
 
-        /* 2. 評価画面：ボタンの下に何も残さない */
-        #mainApp.active { display: block; padding: 0; }
-        .app-container { max-width: 800px; margin: 0 auto; padding: 20px 15px; }
-        
-        /* 各セクションのカード */
-        .card { 
-            background: white; 
+        function initForm() {
+            let html = '';
+            for (let title in evalConfig) {
+                const conf = evalConfig[title];
+                html += `<section class="card"><h2>${title}</h2>`;
+                conf.items.forEach((text, i) => {
+                    html += `<div class="eval-row">
+                        <div style="font-size:13px; flex:1; padding-right:15px; color:#333;">${text}</div>
+                        <div class="radio-group">${makeRadios(conf.prefix + (i+1))}</div>
+                    </div>`;
+                });
+                html += `<p style="margin-top:15px; font-weight:bold; font-size:13px; color:#495057;">【所見】</p>
+                         <textarea id="view-${conf.prefix}" class="form-control" rows="3"></textarea></section>`;
+            }
+            document.getElementById('dynamicSections').innerHTML = html;
+            document.getElementById('group-E').innerHTML = makeRadios('E');
+        }
+
+        async function postToGAS(payload) {
+            const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+            return await response.json();
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('loginError');
+            btn.disabled = true; btn.innerText = "認証中...";
+            err.innerText = "";
+
+            try {
+                const res = await postToGAS({
+                    action: "login",
+                    studentId: document.getElementById('studentId').value,
+                    password: document.getElementById('password').value
+                });
+
+                if (res.success) {
+                    document.getElementById('displayId').innerText = res.id;
+                    document.getElementById('currentUserName').innerText = res.userName;
+                    if (res.savedData) fillForm(res.savedData);
+                    document.getElementById('loginScreen').classList.remove('active');
+                    document.getElementById('mainApp').classList.add('active');
+                    window.scrollTo(0,0);
+                } else {
+                    err.innerText = "IDまたはパスワードが正しくありません";
+                }
+            } catch(e) { err.innerText = "通信エラーが発生しました"; }
+            btn.disabled = false; btn.innerText = "ログイン";
+        });
+
+        function fillForm(d) {
+            const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ""; };
+            setVal('info_type', d[3]); setVal('info_owner', d[4]); setVal('info_facility', d[5]);
+            setVal('info_rep', d[7]); setVal('info_mentor', d[8]);
+            if(d[11]) { const r = document.querySelector(`input[name="stay_type"][value="${d[11]}"]`); if(r) r.checked = true; }
+            
+            let col = 18;
+            ['A', 'B', 'C', 'D'].forEach(p => {
+                const count = (p==='A')?4 : (p==='B')?3 : (p==='C')?6 : 5;
+                for(let i=1; i<=count; i++) {
+                    const r = document.querySelector(`input[name="${p}${i}"][value="${d[col++]}"]`);
+                    if(r) r.checked = true;
+                }
+                setVal(`view-${p}`, d[col++]);
+            });
+            const rE = document.querySelector(`input[name="E"][value="${d[col++]}"]`);
+            if(rE) rE.checked = true;
+            setVal('comment-F', d[col++]); setVal('comment-G', d[col++]);
+        }
+
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.innerText = "保存中...";
+            
+            const formData = [
+                document.getElementById('displayId').innerText,
+                document.getElementById('currentUserName').innerText,
+                "ソーシャルワーク実習",
+                document.getElementById('info_type').value,
+                document.getElementById('info_owner').value,
+                document.getElementById('info_facility').value,
+                "", // 所在地
+                document.getElementById('info_rep').value,
+                document.getElementById('info_mentor').value,
+                "","","", // 日付・通い・状況
+                "","","","","","" // 出席数等
+            ];
+            
+            ['A', 'B', 'C', 'D'].forEach(p => {
+                const count = (p==='A')?4 : (p==='B')?3 : (p==='C')?6 : 5;
+                for(let i=1; i<=count; i++) {
+                    formData.push((document.querySelector(`input[name="${p}${i}"]:checked`) || {}).value || "");
+                }
+                formData.push(document.getElementById(`view-${p}`).value);
+            });
+            formData.push((document.querySelector('input[name="E"]:checked') || {}).value || "");
+            formData.push(document.getElementById('comment-F').value);
+            formData.push(document.getElementById('comment-G').value);
+
+            try {
+                await postToGAS({ action: "save", formData });
+                alert("データの保存・上書きが完了しました。");
+            } catch(e) { alert("保存中にエラーが発生しました。"); }
+            btn.disabled = false; btn.innerText = "データを保存・更新する";
+        });
+
+        initForm();
+    </script>
+</body>
+</html>            background: white; 
             padding: 20px; 
             margin-bottom: 20px; 
             border-radius: 10px; 
