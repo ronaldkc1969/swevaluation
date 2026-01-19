@@ -6,35 +6,728 @@
     <title>種智院大学 ソーシャルワーク実習成績評価システム</title>
     <style>
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #f8f9fa; font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; }
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: "Segoe UI", "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            color: #2c3e50;
+        }
+
+        /* 共通スタイル */
         .screen { display: none; width: 100%; }
         
-        /* 1. ログイン画面 */
-        #loginScreen.active { display: flex; height: 100vh; align-items: center; justify-content: center; background-color: #e9ecef; }
-        .login-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 400px; text-align: center; }
-        .univ-name { font-size: 1.4rem; color: #0056b3; font-weight: bold; margin-bottom: 10px; display: block; }
-        
-        /* 2. 評価画面 */
+        /* ===== ログイン画面 ===== */
+        #loginScreen.active { 
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            width: 100%;
+            max-width: 420px;
+            padding: 50px 45px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 35px;
+        }
+
+        .univ-name { 
+            font-size: 24px;
+            color: #1e40af;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .system-title {
+            font-size: 20px;
+            color: #475569;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .login-form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .login-form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+
+        .login-form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            font-family: inherit;
+        }
+
+        .login-form-group input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        #loginBtn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #loginBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(30, 64, 175, 0.3);
+        }
+
+        #loginBtn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+
+        #loginError {
+            color: #dc2626;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 16px;
+            min-height: 20px;
+            font-weight: 500;
+        }
+
+        /* ===== メイン画面 ===== */
         #mainApp.active { display: block; }
-        .app-container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
-        .card { background: white; padding: 30px; margin-bottom: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
-        /* 注意事項 */
-        .notice-box { background-color: #fff9db; border: 1px solid #ffec99; padding: 25px; border-radius: 12px; margin-bottom: 30px; }
-        .notice-box h3 { margin-top: 0; font-size: 1.2rem; color: #e67700; border-bottom: 2px solid #ffec99; padding-bottom: 10px; }
-        .notice-box ul { margin: 15px 0 0 0; padding-left: 25px; font-size: 16px; line-height: 1.8; color: #495057; }
-        .notice-important { color: #d9480f; font-weight: bold; margin-top: 15px; display: block; font-size: 17px; }
 
-        /* フォントサイズ拡大設定 */
-        .form-control { width: 100%; padding: 14px; font-size: 18px; border: 1px solid #ced4da; border-radius: 8px; margin-top: 8px; line-height: 1.6; }
-        h2 { font-size: 1.4rem; color: #0056b3; border-left: 8px solid #0056b3; padding-left: 15px; margin: 0 0 25px 0; }
-        .eval-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f3f5; }
-        .eval-text { font-size: 17px; flex: 1; padding-right: 20px; color: #333; line-height: 1.5; }
-        
-        .radio-group { display: flex; gap: 12px; }
-        .score-label { font-size: 13px; text-align: center; line-height: 1.4; cursor: pointer; font-weight: bold; }
-        .score-label input { transform: scale(1.3); margin-bottom: 5px; } /* ラジオボタン自体を大きく */
+        .app-container { 
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
 
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 24px 28px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header-info {
+            font-size: 14px;
+            line-height: 1.8;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .header-univ {
+            color: #1e40af;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .header-user {
+            color: #475569;
+        }
+
+        .header-user strong {
+            color: #1e3a8a;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f1f5f9;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #1e40af;
+            font-weight: 700;
+            border-left: 4px solid #1e40af;
+            padding-left: 12px;
+            margin: 0 0 22px 0;
+            letter-spacing: 0.3px;
+        }
+
+        /* 注意事項ボックス */
+        .notice-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #fcd34d;
+            padding: 22px 24px;
+            border-radius: 10px;
+            margin-bottom: 28px;
+        }
+
+        .notice-box h3 {
+            margin: 0 0 14px 0;
+            font-size: 15px;
+            color: #b45309;
+            font-weight: 700;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fcd34d;
+        }
+
+        .notice-box ul {
+            margin: 12px 0 0 0;
+            padding-left: 22px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #78350f;
+        }
+
+        .notice-box li {
+            margin-bottom: 8px;
+        }
+
+        .notice-important {
+            color: #9a3412;
+            font-weight: 700;
+            display: block;
+            margin-top: 14px;
+            font-size: 13px;
+        }
+
+        /* フォーム要素 */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 13px;
+            font-size: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.08);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.6;
+        }
+
+        .textarea-total {
+            min-height: 160px;
+        }
+
+        /* ラジオボタングループ */
+        .eval-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f1f5f9;
+            gap: 16px;
+        }
+
+        .eval-row:last-child {
+            border-bottom: none;
+        }
+
+        .eval-text {
+            font-size: 15px;
+            flex: 1;
+            min-width: 300px;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .radio-group[id="group-E"] {
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .score-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #475569;
+            gap: 4px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .score-label:hover {
+            background-color: #f0f4f8;
+        }
+
+        .score-label input {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #1e40af;
+        }
+
+        /* 通い・宿泊ラジオ */
+        .stay-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 32px;
+            font-size: 15px;
+        }
+
+        .stay-option input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #1e40af;
+        }
+
+        .stay-option label {
+            margin: 0;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        /* セクション見出し */
+        .section-comment-title {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        /* ボタン */
+        .btn--save {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 14px 28px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            margin-top: 28px;
+            margin-bottom: 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn--save:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn--save:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+
+        .btn--logout {
+            background: #6b7280;
+            color: white;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn--logout:hover {
+            background: #4b5563;
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .eval-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .radio-group {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .stay-option {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+
+            .app-container {
+                padding: 20px 16px;
+            }
+
+            .card {
+                padding: 20px;
+                margin-bottom: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== ログイン画面 ===== -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-header">
+                <span class="univ-name">種智院大学</span>
+                <h1 class="system-title">実習成績評価システム</h1>
+            </div>
+
+            <form id="loginForm">
+                <div class="login-form-group">
+                    <label for="studentId">学籍番号</label>
+                    <input type="text" id="studentId" placeholder="IDを入力" required>
+                </div>
+                <div class="login-form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" placeholder="パスワードを入力" required>
+                </div>
+                <button type="submit" id="loginBtn">ログイン</button>
+                <div id="loginError"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== メイン画面 ===== -->
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <header>
+                <div class="header-info">
+                    <span class="header-univ">種智院大学</span>
+                    <div class="header-user">
+                        学籍番号: <span id="displayId" style="font-weight: 600;"></span>
+                        &nbsp;&nbsp;|&nbsp;&nbsp;
+                        氏名: <span id="currentUserName" style="font-weight: 600;"></span> 様
+                    </div>
+                </div>
+                <button onclick="location.reload()" class="btn--logout">ログアウト</button>
+            </header>
+
+            <form id="evaluationForm">
+                <!-- 実習施設・出席状況 -->
+                <section class="card">
+                    <h2>実習施設・出席状況</h2>
+                    <div class="grid-2">
+                        <div>
+                            <label for="info_type">種別</label>
+                            <input type="text" id="info_type" class="form-control">
+                        </div>
+                        <div>
+                            <label for="info_owner">設置主体名</label>
+                            <input type="text" id="info_owner" class="form-control">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 18px;">
+                        <label for="info_facility">施設・機関名</label>
+                        <input type="text" id="info_facility" class="form-control">
+                    </div>
+                    <div class="grid-2">
+                        <div>
+                            <label for="info_rep">代表者</label>
+                            <input type="text" id="info_rep" class="form-control">
+                        </div>
+                        <div>
+                            <label for="info_mentor">実習指導者</label>
+                            <input type="text" id="info_mentor" class="form-control">
+                        </div>
+                    </div>
+                    <div style="margin-top: 18px;">
+                        <label style="display: block; margin-bottom: 10px;">通い・宿泊の別</label>
+                        <div style="display: flex;">
+                            <div class="stay-option">
+                                <input type="radio" name="stay_type" value="通い" id="stay_1">
+                                <label for="stay_1">通い</label>
+                            </div>
+                            <div class="stay-option">
+                                <input type="radio" name="stay_type" value="宿泊" id="stay_2">
+                                <label for="stay_2">宿泊</label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 注意事項 -->
+                <div class="notice-box">
+                    <h3>【記入上の注意点】</h3>
+                    <ul>
+                        <li>各評価項目（A〜D）は、<strong>5段階（5:優 〜 1:不十分）</strong>または<strong>非該当</strong>で評価してください。</li>
+                        <li>各項目の【所見】欄には、評価の理由を具体的にご記入ください。</li>
+                    </ul>
+                    <span class="notice-important">※途中で記入を終える場合は、必ず最下部の「データを保存・更新する」を押してください。</span>
+                </div>
+
+                <!-- 動的セクション -->
+                <div id="dynamicSections"></div>
+
+                <!-- 総合評価 -->
+                <section class="card">
+                    <h2>Ｅ　総合評価</h2>
+                    <div class="radio-group" id="group-E"></div>
+                </section>
+
+                <!-- 所見・アドバイス -->
+                <section class="card">
+                    <h2>所見・アドバイス</h2>
+                    <div style="margin-bottom: 24px;">
+                        <label for="comment-F" class="section-comment-title">Ｆ　実習生に関する総評を具体的にご記入下さい。</label>
+                        <textarea id="comment-F" class="form-control textarea-total"></textarea>
+                    </div>
+                    <div>
+                        <label for="comment-G" class="section-comment-title">Ｇ　実習生のアドバイス（長所・短所・今後の学習事項等）</label>
+                        <textarea id="comment-G" class="form-control textarea-total"></textarea>
+                    </div>
+                </section>
+
+                <!-- 保存ボタン -->
+                <button type="submit" class="btn--save" id="saveBtn">データを保存・更新する</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzBuU4I8fuECSldym_-c2KDY8gVFGCwAIyjZdMqWr5nH88u9xiqgBbU71ylaA56GQyy8A/exec";
+        
+        const evalConfig = {
+            'Ａ　基本的知識の理解・習得の状況': {
+                prefix: 'A',
+                items: [
+                    '① 施設・機関の利用者及びその生活課題・ニーズに関する理解',
+                    '② 実習した職種の業務内容に関する理解',
+                    '③ 実習施設・機関の機構・機能（法的根拠・目的等）に対する理解',
+                    '④ 実習施設・機関に関連する他施設・制度・社会資源に関する理解'
+                ]
+            },
+            'Ｂ　基本的技術・技能の習得の状況': {
+                prefix: 'B',
+                items: [
+                    '① 利用者に対して共感的・理解的に接する技能',
+                    '② 実習施設・機関の基本的技術（面接、観察、ケア等）の習得',
+                    '③ 実習日誌や各種記録を的確に作成する能力'
+                ]
+            },
+            'Ｃ　実習態度の状況': {
+                prefix: 'C',
+                items: [
+                    '① 規則の遵守（出退勤、注意事項、マナー、服装、言葉遣い等）',
+                    '② 実習職種の職務を習得しようとする意欲、積極性',
+                    '③ 利用者に積極的に関わろうとする態度',
+                    '④ 利用者の人権・人格を尊重しようとする態度',
+                    '⑤ 実習指導者の指導・助言を積極的に求めようとする態度',
+                    '⑥ 実習現場における他職種、他職員と協働しようとする態度'
+                ]
+            },
+            'Ｄ　実習を通した変容': {
+                prefix: 'D',
+                items: [
+                    '① 各自の実習目標（実習計画書、本日の学習目標）の達成度',
+                    '② 利用者とそのニーズに対する理解や援助関係を深めた',
+                    '③ 実践現場に関する理解を深めた',
+                    '④ 実践技術・技能を深めた',
+                    '⑤ 自己理解を深めた'
+                ]
+            }
+        };
+
+        function makeRadios(name) {
+            return [5, 4, 3, 2, 1, '非該当'].map(v => `
+                <label class="score-label">
+                    <input type="radio" name="${name}" value="${v}">
+                    ${v}
+                </label>
+            `).join('');
+        }
+
+        function initForm() {
+            let html = '';
+            for (let title in evalConfig) {
+                const conf = evalConfig[title];
+                html += `<section class="card"><h2>${title}</h2>`;
+                conf.items.forEach((text, i) => {
+                    html += `<div class="eval-row">
+                        <div class="eval-text">${text}</div>
+                        <div class="radio-group">${makeRadios(conf.prefix + (i+1))}</div>
+                    </div>`;
+                });
+                html += `<p class="section-comment-title">【${conf.prefix}項目の所見】</p>
+                         <textarea id="view-${conf.prefix}" class="form-control"></textarea></section>`;
+            }
+            document.getElementById('dynamicSections').innerHTML = html;
+            document.getElementById('group-E').innerHTML = makeRadios('E');
+        }
+
+        async function postToGAS(payload) {
+            const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+            return await response.json();
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('loginError');
+            btn.disabled = true;
+            btn.innerText = "認証中...";
+            try {
+                const res = await postToGAS({
+                    action: "login",
+                    studentId: document.getElementById('studentId').value,
+                    password: document.getElementById('password').value
+                });
+                if (res.success) {
+                    document.getElementById('displayId').innerText = res.id;
+                    document.getElementById('currentUserName').innerText = res.userName;
+                    if (res.savedData) fillForm(res.savedData);
+                    document.getElementById('loginScreen').classList.remove('active');
+                    document.getElementById('mainApp').classList.add('active');
+                    window.scrollTo(0, 0);
+                } else {
+                    err.innerText = "IDまたはパスワードが正しくありません";
+                }
+            } catch (e) {
+                err.innerText = "通信エラーが発生しました";
+            }
+            btn.disabled = false;
+            btn.innerText = "ログイン";
+        });
+
+        function fillForm(d) {
+            const setVal = (id, val) => {
+                if (document.getElementById(id)) document.getElementById(id).value = val || "";
+            };
+            setVal('info_type', d[3]);
+            setVal('info_owner', d[4]);
+            setVal('info_facility', d[5]);
+            setVal('info_rep', d[7]);
+            setVal('info_mentor', d[8]);
+            if (d[11]) {
+                const r = document.querySelector(`input[name="stay_type"][value="${d[11]}"]`);
+                if (r) r.checked = true;
+            }
+            let col = 18;
+            ['A', 'B', 'C', 'D'].forEach(p => {
+                const count = (p === 'A') ? 4 : (p === 'B') ? 3 : (p === 'C') ? 6 : 5;
+                for (let i = 1; i <= count; i++) {
+                    const r = document.querySelector(`input[name="${p}${i}"][value="${d[col++]}"]`);
+                    if (r) r.checked = true;
+                }
+                setVal(`view-${p}`, d[col++]);
+            });
+            const rE = document.querySelector(`input[name="E"][value="${d[col++]}"]`);
+            if (rE) rE.checked = true;
+            setVal('comment-F', d[col++]);
+            setVal('comment-G', d[col++]);
+        }
+
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerText = "保存中...";
+            const formData = [
+                document.getElementById('displayId').innerText,
+                document.getElementById('currentUserName').innerText,
+                "ソーシャルワーク実習",
+                document.getElementById('info_type').value,
+                document.getElementById('info_owner').value,
+                document.getElementById('info_facility').value,
+                "", document.getElementById('info_rep').value, document.getElementById('info_mentor').value,
+                "", "", "", "", "", "", "", "", ""
+            ];
+            ['A', 'B', 'C', 'D'].forEach(p => {
+                const count = (p === 'A') ? 4 : (p === 'B') ? 3 : (p === 'C') ? 6 : 5;
+                for (let i = 1; i <= count; i++) {
+                    formData.push((document.querySelector(`input[name="${p}${i}"]:checked`) || {}).value || "");
+                }
+                formData.push(document.getElementById(`view-${p}`).value);
+            });
+            formData.push((document.querySelector('input[name="E"]:checked') || {}).value || "");
+            formData.push(document.getElementById('comment-F').value);
+            formData.push(document.getElementById('comment-G').value);
+            try {
+                await postToGAS({ action: "save", formData });
+                alert("種智院大学：データの保存・更新が完了しました。");
+            } catch (e) {
+                alert("保存エラーが発生しました。");
+            }
+            btn.disabled = false;
+            btn.innerText = "データを保存・更新する";
+        });
+
+        initForm();
+    </script>
+</body>
+</html>
         .btn { padding: 16px 30px; cursor: pointer; border-radius: 8px; font-weight: bold; border: none; font-size: 18px; transition: 0.3s; }
         .btn--primary { background: #007bff; color: white; width: 100%; }
         .btn--save { background: #28a745; color: white; width: 100%; font-size: 1.4rem; padding: 25px; margin: 20px 0 0 0; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
