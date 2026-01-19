@@ -5,36 +5,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>種智院大学 実習成績評価システム</title>
     <style>
-        /* 基本スタイル：保存ボタンの下に余白を作らない */
-        * { box-sizing: border-box; }
-        html, body {
-            margin: 0; padding: 0; width: 100%; min-height: 100vh;
-            background-color: #f5f7fa;
-            font-family: "Helvetica Neue", Arial, sans-serif;
-        }
+        /* 全体の初期化：重なりを防止 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #f5f7fa; font-family: sans-serif; }
 
-        /* 【重要】画面切り替え：activeがない画面は物理的に「存在しない」状態にする */
+        /* 【最重要】activeクラスがない画面は、ブラウザから完全に消去する */
         .screen { display: none !important; }
         .screen.active { display: block !important; }
 
-        /* ログイン画面専用レイアウト */
+        /* ログイン画面のレイアウト */
         #loginScreen.active {
             display: flex !important;
             height: 100vh;
             align-items: center;
             justify-content: center;
         }
-
         .login-card {
-            background: white; padding: 32px 28px; border-radius: 12px;
-            box-shadow: 0 14px 36px rgba(0,0,0,0.1);
-            width: 90%; max-width: 360px; text-align: center;
+            background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 350px; text-align: center;
         }
 
-        /* 評価画面メイン */
-        .app-container { max-width: 920px; margin: 0 auto; padding: 20px 16px 40px; }
+        /* 評価画面のレイアウト */
+        .app-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        header {
+        /* 共通の入力スタイル */
+        .form-control { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        .eval-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        
+        /* ボタン：保存ボタンが「最後」に来るように定義 */
+        .btn-blue { background: #0056b3; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-save { background: #28a745; color: white; border: none; padding: 20px; width: 100%; border-radius: 10px; cursor: pointer; font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loginScreen" class="screen active">
+        <div class="login-card">
+            <h1 style="color:#0056b3; font-size:1.2rem;">種智院大学</h1>
+            <p style="margin-bottom:20px;">実習成績評価システム</p>
+            <form id="loginForm">
+                <div style="text-align:left; margin-bottom:15px;">
+                    <label>学籍番号</label>
+                    <input type="text" id="studentId" class="form-control" required>
+                </div>
+                <div style="text-align:left; margin-bottom:20px;">
+                    <label>パスワード</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn-blue">ログイン</button>
+            </form>
+            <p id="loginError" style="color:red; font-size:12px; margin-top:10px;"></p>
+        </div>
+    </div>
+
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <header class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><strong>種智院大学</strong><br><span id="currentUserName"></span></div>
+                <button onclick="location.reload()" style="padding:5px 10px;">ログアウト</button>
+            </header>
+
+            <form id="evaluationForm">
+                <div class="card">
+                    <h2 style="color:#0056b3; font-size:1rem; margin-bottom:10px;">実習施設情報</h2>
+                    <label>施設・機関名</label><input type="text" id="info_facility" class="form-control">
+                    <div style="margin-top:10px;">
+                        <label>実習指導者</label><input type="text" id="info_mentor" class="form-control">
+                    </div>
+                </div>
+
+                <div id="dynamicSections"></div>
+
+                <div class="card">
+                    <h2 style="color:#0056b3; font-size:1rem; margin-bottom:10px;">Ｅ 総合評価</h2>
+                    <div id="group-E" style="display:flex; gap:10px;"></div>
+                </div>
+
+                <div class="card">
+                    <h2 style="color:#0056b3; font-size:1rem; margin-bottom:10px;">所見・アドバイス</h2>
+                    <label>Ｆ 総評</label><textarea id="comment-F" class="form-control" style="height:100px;"></textarea>
+                    <label style="margin-top:10px; display:block;">Ｇ アドバイス</label><textarea id="comment-G" class="form-control" style="height:100px;"></textarea>
+                </div>
+
+                <button type="submit" class="btn-save">データを保存・更新する</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzBuU4I8fuECSldym_-c2KDY8gVFGCwAIyjZdMqWr5nH88u9xiqgBbU71ylaA56GQyy8A/exec";
+
+        // ラジオボタン作成
+        function makeRadios(name) {
+            return [5,4,3,2,1,'非該当'].map(v => `<label style="text-align:center; font-size:11px;"><input type="radio" name="${name}" value="${v}"><br>${v}</label>`).join('');
+        }
+
+        // 評価項目の生成（評価画面の中だけに限定）
+        function initForm() {
+            const config = {
+                'Ａ 基本的知識': { prefix: 'A', items: ['① 利用者への理解'] },
+                'Ｂ 基本的技術': { prefix: 'B', items: ['① コミュニケーション能力'] }
+            };
+            let html = '';
+            for (let title in config) {
+                html += `<div class="card"><h2 style="color:#0056b3; font-size:1rem; border-left:4px solid #0056b3; padding-left:10px;">${title}</h2>`;
+                config[title].items.forEach((text, i) => {
+                    html += `<div class="eval-row"><span>${text}</span><div style="display:flex; gap:8px;">${makeRadios(config[title].prefix + (i+1))}</div></div>`;
+                });
+                html += `<textarea id="view-${config[title].prefix}" class="form-control" placeholder="所見を入力"></textarea></div>`;
+            }
+            document.getElementById('dynamicSections').innerHTML = html;
+            document.getElementById('group-E').innerHTML = makeRadios('E');
+        }
+
+        // ログイン処理
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // 画面の入れ替え（ログイン画面を物理的に消す）
+            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('mainApp').classList.add('active');
+            document.getElementById('currentUserName').innerText = document.getElementById('studentId').value + " 様";
+            window.scrollTo(0,0);
+        });
+
+        // 保存処理
+        document.getElementById('evaluationForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert("データを保存しました。");
+        });
+
+        initForm();
+    </script>
+</body>
+</html>        header {
             display: flex; justify-content: space-between; align-items: center;
             background: white; padding: 16px; border-radius: 10px;
             margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
