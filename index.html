@@ -1,39 +1,49 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>種智院大学 ソーシャルワーク実習成績評価システム</title>
-    <style>
-        * { box-sizing: border-box; }
-        html, body {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #f5f7fa;
-            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-        }
-        .screen { display: none; width: 100%; }
-        .screen.active { display: block; }
+<!-- ここより下が評価入力画面部分のサンプル（ログイン部は前回のままでOK） -->
 
-        /* ログイン画面 */
-        #loginScreen.active {
-            display: flex;
-            height: 100vh;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-card {
-            background: white;
-            padding: 32px 28px;
-            border-radius: 12px;
-            box-shadow: 0 14px 36px rgba(0,0,0,0.12);
-            width: 100%;
-            max-width: 360px;
-            text-align: center;
-        }
-        .univ-name {
-            font-size: 1.2rem;
-            color: #0056b3;
-            font-weight: 600;
+<div id="mainApp" class="screen">
+  <div class="app-container">
+    <header>
+      <div class="header-left">
+        <span class="header-univ">種智院大学</span>
+        <div class="header-info">学籍番号: <span id="displayId"></span></div>
+        <div class="header-info">氏名: <strong><span id="currentUserName"></span></strong></div>
+      </div>
+      <button onclick="location.reload()" class="btn btn--logout">ログアウト</button>
+    </header>
+
+    <form id="evaluationForm">
+      <!-- 実習施設・出席状況 -->
+      <section class="card">
+        <h2>実習施設・出席状況</h2>
+        <div class="grid-2">
+          <div>
+            <label>種別</label>
+            <input type="text" id="info_type" class="form-control">
+          </div>
+          <div>
+            <label>設置主体名</label>
+            <input type="text" id="info_owner" class="form-control">
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label>施設・機関名</label>
+          <input type="text" id="info_facility" class="form-control">
+        </div>
+        <div class="grid-2" style="margin-top:12px;">
+          <div>
+            <label>代表者</label>
+            <input type="text" id="info_rep" class="form-control">
+          </div>
+          <div>
+            <label>実習指導者</label>
+            <input type="text" id="info_mentor" class="form-control">
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label style="display:block; margin-bottom:6px;">通い・宿泊の別</label>
+          <div style="display:flex; gap:20px; font-size:14px;">
+            <label><input type="radio" name="stay_type" value="通い"> 通い</label>
+            <label><input type="ra
             margin-bottom: 4px;
             display: block;
         }
