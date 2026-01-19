@@ -28,6 +28,7 @@
         .btn--save { background: #28a745; color: white; width: 100%; font-size: 1.4rem; padding: 25px; margin-top: 20px; }
         .btn--logout { background: #6c757d; color: white; padding: 10px 20px; font-size: 16px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
         label { font-size: 17px; font-weight: bold; color: #495057; }
         .score-label { font-size: 15px; text-align: center; cursor: pointer; }
         .textarea-view { min-height: 120px; margin-top: 10px; }
@@ -67,13 +68,10 @@
                         <div><label>代表者</label><input type="text" id="info_rep" class="form-control"></div>
                         <div><label>実習指導者</label><input type="text" id="info_mentor" class="form-control"></div>
                     </div>
-                    <div style="margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
-                        <label>実習期間</label>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="date" id="period_start" class="form-control" style="width: 200px;"> 〜 
-                            <input type="date" id="period_end" class="form-control" style="width: 200px;">
-                            <span style="margin-left:10px;">実習日数：<input type="number" id="days_total" style="width: 60px; padding: 5px;"> 日</span>
-                        </div>
+                    <div class="grid-3" style="margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <div><label>実習開始日</label><input type="date" id="period_start" class="form-control"></div>
+                        <div><label>実習終了日</label><input type="date" id="period_end" class="form-control"></div>
+                        <div><label>合計実習日数</label><input type="number" id="days_total" class="form-control" placeholder="日"></div>
                     </div>
                     <div class="grid-2" style="margin-top:15px;">
                         <div><label>欠席日数</label><input type="number" id="days_absent" class="form-control" value="0"></div>
@@ -96,6 +94,7 @@
                         <tr><th>１</th><td>かなり努力を要する</td></tr>
                         <tr><th>非該当</th><td>実習内容に含まれていないため評価できない。</td></tr>
                     </table>
+                    <p style="margin-top:10px; color:#d9480f; font-weight:bold;">※データを保存・更新する場合は、最下部の「データを保存・更新する」ボタンを押してください。</p>
                 </div>
 
                 <div id="dynamicSections"></div>
@@ -112,7 +111,7 @@
                         <textarea id="comment-F" class="form-control textarea-total"></textarea>
                     </div>
                     <div>
-                        <label>Ｇ．実習生のアドバイス（長所・短所・今後の学習事項等）</label>
+                        <label>Ｇ．実習生へのアドバイス（長所・短所・今後の学習事項等）</label>
                         <textarea id="comment-G" class="form-control textarea-total"></textarea>
                     </div>
                 </section>
@@ -189,7 +188,6 @@
             document.getElementById('group-E').innerHTML = makeRadios('E');
         }
 
-        // ログイン処理
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -213,7 +211,6 @@
             btn.disabled = false; btn.innerText = "ログイン";
         });
 
-        // フォーム保存
         document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('saveBtn');
@@ -226,7 +223,7 @@
                 document.getElementById('info_type').value,
                 document.getElementById('info_owner').value,
                 document.getElementById('info_facility').value,
-                "", // 未使用枠
+                "", 
                 document.getElementById('info_rep').value,
                 document.getElementById('info_mentor').value,
                 document.getElementById('period_start').value,
@@ -235,7 +232,7 @@
                 document.getElementById('days_total').value,
                 document.getElementById('days_absent').value,
                 document.getElementById('days_late').value,
-                "", "", "" // 予備枠
+                "", "", "" 
             ];
 
             ['A', 'B', 'C', 'D'].forEach(p => {
