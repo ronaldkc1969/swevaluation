@@ -6,34 +6,216 @@
     <title>種智院大学 ソーシャルワーク実習成績評価システム</title>
     <style>
         * { box-sizing: border-box; }
-        html, body { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            min-height: 100vh;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            font-family: "Segoe UI", "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-            color: #2c3e50;
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #f5f7fa;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
         }
-
-        /* 共通スタイル */
         .screen { display: none; width: 100%; }
-        
-        /* ===== ログイン画面 ===== */
-        #loginScreen.active { 
+        .screen.active { display: block; }
+
+        /* ログイン画面 */
+        #loginScreen.active {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
-
-        .login-container {
+        .login-card {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            padding: 32px 28px;
+            border-radius: 12px;
+            box-shadow: 0 14px 36px rgba(0,0,0,0.12);
             width: 100%;
-            max-width: 420px;
+            max-width: 360px;
+            text-align: center;
+        }
+        .univ-name {
+            font-size: 1.2rem;
+            color: #0056b3;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .login-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 2px rgba(0,86,179,0.15);
+        }
+        .btn {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            border: none;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+        .btn--primary {
+            background: #0056b3;
+            color: #fff;
+            width: 100%;
+        }
+        .btn--primary:hover { background: #004085; }
+        .btn--primary:disabled { background: #adb5bd; cursor: not-allowed; }
+
+        /* 評価画面 */
+        #mainApp.active {
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        .app-container {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+        header {
+            display:flex;
+            justify-content: space-between;
+            align-items: center;
+            background:white;
+            padding:16px 20px;
+            border-radius:10px;
+            margin-bottom:20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .header-left { font-size: 14px; color:#555; }
+        .header-univ {
+            color:#0056b3;
+            font-weight:700;
+            display:block;
+            margin-bottom:4px;
+        }
+        .header-info strong { font-weight:600; color:#333; }
+        .btn--logout {
+            background:#6c757d;
+            color:white;
+            font-size:13px;
+            padding:8px 16px;
+        }
+        .btn--logout:hover { background:#5a6268; }
+
+        .card {
+            background:white;
+            padding:20px 18px;
+            margin-bottom:16px;
+            border-radius:10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        h2 {
+            font-size:1.1rem;
+            color:#0056b3;
+            border-left:4px solid #0056b3;
+            padding-left:10px;
+            margin:0 0 16px 0;
+        }
+        label {
+            font-size:14px;
+            font-weight:600;
+            color:#333;
+        }
+        .grid-2 {
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px;
+        }
+        .eval-row {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            padding:10px 0;
+            border-bottom:1px solid #f1f3f5;
+        }
+        .eval-row:last-child { border-bottom:none; }
+        .eval-text {
+            font-size:14px;
+            flex:1;
+            padding-right:16px;
+            color:#333;
+            line-height:1.5;
+        }
+        .radio-group {
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+        }
+        .score-label {
+            font-size:11px;
+            text-align:center;
+            cursor:pointer;
+        }
+        .score-label input {
+            transform:scale(1.2);
+            margin-bottom:4px;
+        }
+        .textarea-view { min-height:120px; }
+        .textarea-total { min-height:150px; }
+        textarea { resize:vertical; }
+
+        .btn--save {
+            background:#28a745;
+            color:white;
+            width:100%;
+            font-size:1.05rem;
+            padding:16px;
+            margin-top:18px;
+        }
+        .btn--save:hover { background:#218838; }
+        .btn--save:disabled { background:#adb5bd; cursor:not-allowed; }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns:1fr; }
+            header { flex-direction:column; align-items:flex-start; gap:10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ログイン画面 -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-card">
+            <span class="univ-name">種智院大学</span>
+            <div class="login-title">実習成績評価システム</div>
+            <form id="loginForm">
+                <div style="text-align:left; margin-bottom:16px;">
+                    <label>学籍番号</label>
+                    <input type="text" id="studentId" class="form-control" required>
+                </div>
+                <div style="text-align:left; margin-bottom:24px;">
+                    <label>パスワード</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn--primary" id="loginBtn">ログイン</button>
+                <div id="loginError" style="color:#dc3545; text-align:center; font-size:13px; margin-top:14px; min-height:1.2em;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 評価入力画面 -->
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <header>
+                <div class="header-left">
+                    <span class="header-univ">種智院大学</span>
+                    <div class="header-info">学籍番号: <span id="displayId"></span></div>
+                    <div class="header-info">氏名: <strong><span id="currentUserName"></span></strong></div>
+                </div>
+                <button onclick="location.reload()" class="btn btn--logout">ログアウト</button>
+            </hea
             padding: 50px 45px;
             text-align: center;
         }
