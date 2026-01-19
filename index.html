@@ -43,6 +43,119 @@
           <label style="display:block; margin-bottom:6px;">通い・宿泊の別</label>
           <div style="display:flex; gap:20px; font-size:14px;">
             <label><input type="radio" name="stay_type" value="通い"> 通い</label>
+            <label><input type="radio" name="stay_type" value="宿泊"> 宿泊</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- A〜D は JavaScript で動的生成 -->
+      <div id="dynamicSections"></div>
+
+      <!-- E 総合評価 -->
+      <section class="card">
+        <h2>Ｅ　総合評価</h2>
+        <div class="radio-group" id="group-E"></div>
+      </section>
+
+      <!-- F・G 所見・アドバイス -->
+      <section class="card">
+        <h2>所見・アドバイス</h2>
+        <div style="margin-bottom:16px;">
+          <label>Ｆ　実習生に関する総評</label>
+          <textarea id="comment-F" class="form-control textarea-total"></textarea>
+        </div>
+        <div>
+          <label>Ｇ　実習生へのアドバイス</label>
+          <textarea id="comment-G" class="form-control textarea-total"></textarea>
+        </div>
+      </section>
+
+      <button type="submit" class="btn btn--save" id="saveBtn">データを保存・更新する</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const evalConfig = {
+    'Ａ　基本的知識の理解・習得の状況': {
+      prefix: 'A',
+      items: [
+        '① 施設・機関の利用者及びその生活課題・ニーズに関する理解',
+        '② 実習した職種の業務内容に関する理解',
+        '③ 実習施設・機関の機構・機能（法的根拠・目的等）に対する理解',
+        '④ 実習施設・機関に関連する他施設・制度・社会資源に関する理解'
+      ]
+    },
+    'Ｂ　基本的技術・技能の習得の状況': {
+      prefix: 'B',
+      items: [
+        '① 利用者に対して共感的・理解的に接する技能',
+        '② 実習施設・機関の基本的技術（面接、観察、ケア等）の習得',
+        '③ 実習日誌や各種記録を的確に作成する能力'
+      ]
+    },
+    'Ｃ　実習態度の状況': {
+      prefix: 'C',
+      items: [
+        '① 規則の遵守（出退勤、注意事項、マナー、服装、言葉遣い等）',
+        '② 実習職種の職務を習得しようとする意欲、積極性',
+        '③ 利用者に積極的に関わろうとする態度',
+        '④ 利用者の人権・人格を尊重しようとする態度',
+        '⑤ 実習指導者の指導・助言を積極的に求めようとする態度',
+        '⑥ 実習現場における他職種、他職員と協働しようとする態度'
+      ]
+    },
+    'Ｄ　実習を通した変容': {
+      prefix: 'D',
+      items: [
+        '① 各自の実習目標（実習計画書、本日の学習目標）の達成度',
+        '② 利用者とそのニーズに対する理解や援助関係を深めた',
+        '③ 実践現場に関する理解を深めた',
+        '④ 実践技術・技能を深めた',
+        '⑤ 自己理解を深めた'
+      ]
+    }
+  };
+
+  function makeRadios(name) {
+    return [5,4,3,2,1,'非該当'].map(v => `
+      <label class="score-label">
+        <input type="radio" name="${name}" value="${v}">
+        <br>${v}
+      </label>
+    `).join('');
+  }
+
+  function initForm() {
+    let html = '';
+    for (let title in evalConfig) {
+      const conf = evalConfig[title];
+      html += `<section class="card"><h2>${title}</h2>`;
+      conf.items.forEach((text, i) => {
+        html += `<div class="eval-row">
+          <div class="eval-text">${text}</div>
+          <div class="radio-group">${makeRadios(conf.prefix + (i+1))}</div>
+        </div>`;
+      });
+      html += `<p style="margin-top:10px; font-size:13px; font-weight:600;">【${conf.prefix}項目の所見】</p>
+               <textarea id="view-${conf.prefix}" class="form-control textarea-view"></textarea></section>`;
+    }
+    document.getElementById('dynamicSections').innerHTML = html;
+    document.getElementById('group-E').innerHTML = makeRadios('E');
+  }
+
+  // 以降の login / save / fillForm の処理は前回コードのままで動きます
+  initForm();
+</script>
+          <div>
+            <label>実習指導者</label>
+            <input type="text" id="info_mentor" class="form-control">
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label style="display:block; margin-bottom:6px;">通い・宿泊の別</label>
+          <div style="display:flex; gap:20px; font-size:14px;">
+            <label><input type="radio" name="stay_type" value="通い"> 通い</label>
             <label><input type="ra
             margin-bottom: 4px;
             display: block;
